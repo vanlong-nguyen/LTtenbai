@@ -4,7 +4,6 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(localStorage.getItem("login") === "yes");
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
-
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState(JSON.parse(localStorage.getItem("items") || "[]"));
@@ -124,12 +123,9 @@ export default function App() {
     setSelectedDate(d.toISOString().slice(0, 10));
   };
 
-  const sameMonth = (date) => date.slice(0, 7) === selectedDate.slice(0, 7);
-  const sameYear = (date) => date.slice(0, 4) === selectedDate.slice(0, 4);
-
   const todayItems = items.filter((x) => x.date === selectedDate);
-  const monthItems = items.filter((x) => sameMonth(x.date));
-  const yearItems = items.filter((x) => sameYear(x.date));
+  const monthItems = items.filter((x) => x.date.slice(0, 7) === selectedDate.slice(0, 7));
+  const yearItems = items.filter((x) => x.date.slice(0, 4) === selectedDate.slice(0, 4));
 
   const makeSummary = (arr) => {
     const buy = arr.reduce((s, x) => s + x.qty * x.buyPrice, 0);
@@ -166,7 +162,9 @@ export default function App() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button style={styles.button} onClick={login}>Đăng nhập</button>
+          <button style={styles.button} onClick={login}>
+            Đăng nhập
+          </button>
 
           <p style={styles.gray}>ID: admin / Mật khẩu: 123456</p>
         </div>
@@ -178,13 +176,16 @@ export default function App() {
     <div style={styles.page}>
       {menuOpen && <div style={styles.overlay} onClick={() => setMenuOpen(false)} />}
 
-      <div style={{ ...styles.sideMenu, left: menuOpen ? 0 : -330 }}>
+      <div style={{ ...styles.sideMenu, left: menuOpen ? 0 : -295 }}>
         <h2 style={{ color: "#00ff99" }}>Bảng chọn</h2>
 
-        <button style={styles.redButton} onClick={() => setMenuOpen(false)}>Đóng</button>
+        <button style={styles.redButton} onClick={() => setMenuOpen(false)}>
+          Đóng
+        </button>
 
         <div style={styles.cardMini}>
           <h3>Chọn ngày</h3>
+
           <input
             style={styles.input}
             type="date"
@@ -193,8 +194,13 @@ export default function App() {
           />
 
           <div style={styles.grid}>
-            <button style={styles.grayButton} onClick={() => moveDay(-1)}>← Ngày trước</button>
-            <button style={styles.grayButton} onClick={() => moveDay(1)}>Ngày sau →</button>
+            <button style={styles.grayButton} onClick={() => moveDay(-1)}>
+              ← Trước
+            </button>
+
+            <button style={styles.grayButton} onClick={() => moveDay(1)}>
+              Sau →
+            </button>
           </div>
         </div>
 
@@ -238,14 +244,20 @@ export default function App() {
       </div>
 
       <div style={styles.header}>
-        <button style={styles.menuButton} onClick={() => setMenuOpen(true)}>☰</button>
+        <button style={styles.menuButton} onClick={() => setMenuOpen(true)}>
+          ☰
+        </button>
+
         <h1 style={styles.logoSmall}>LTtenbai</h1>
-        <button style={styles.logoutSmall} onClick={logout}>Thoát</button>
+
+        <button style={styles.logoutSmall} onClick={logout}>
+          Thoát
+        </button>
       </div>
 
       <div style={styles.card}>
-        <h2>{editingId ? "Chỉnh sửa dữ liệu" : "Nhập sản phẩm"}</h2>
-        <p style={styles.gray}>Ngày đang nhập: {selectedDate}</p>
+        <h2>{editingId ? "Chỉnh sửa" : "Nhập sản phẩm"}</h2>
+        <p style={styles.gray}>Ngày: {selectedDate}</p>
 
         <input
           style={styles.input}
@@ -258,7 +270,7 @@ export default function App() {
           <input
             style={styles.input}
             type="number"
-            placeholder="Số lượng"
+            placeholder="SL"
             value={form.qty}
             onChange={(e) => setForm({ ...form, qty: e.target.value })}
           />
@@ -329,22 +341,23 @@ export default function App() {
       </div>
 
       <div style={styles.card}>
-        <h2>Bảng sản phẩm ngày {selectedDate}</h2>
+        <h2>Bảng sản phẩm</h2>
+        <p style={styles.gray}>Ngày: {selectedDate}</p>
 
         <div style={styles.tableWrap}>
           <table style={styles.table}>
             <thead>
               <tr>
-                <th>Tên hàng</th>
+                <th>Tên</th>
                 <th>SL</th>
-                <th>Giá mua</th>
-                <th>Giá bán</th>
+                <th>Mua</th>
+                <th>Bán</th>
                 <th>Kênh</th>
-                <th>Phí sàn</th>
+                <th>Phí</th>
                 <th>Ship</th>
-                <th>Đã bán</th>
-                <th>Ghi chú</th>
-                <th>Lãi/Lỗ</th>
+                <th>Sold</th>
+                <th>Note</th>
+                <th>Lãi</th>
                 <th>Sửa/Xóa</th>
               </tr>
             </thead>
@@ -364,10 +377,16 @@ export default function App() {
                     <td>{yen(x.ship)}</td>
                     <td>{x.sold ? "✅" : "⬜"}</td>
                     <td>{x.note}</td>
-                    <td style={{ color: profit >= 0 ? "#00ff99" : "#ff4444" }}>{yen(profit)}</td>
+                    <td style={{ color: profit >= 0 ? "#00ff99" : "#ff4444" }}>
+                      {yen(profit)}
+                    </td>
                     <td>
-                      <button style={styles.smallGreen} onClick={() => editItem(x)}>Sửa</button>
-                      <button style={styles.smallRed} onClick={() => deleteItem(x.id)}>Xóa</button>
+                      <button style={styles.smallGreen} onClick={() => editItem(x)}>
+                        Sửa
+                      </button>
+                      <button style={styles.smallRed} onClick={() => deleteItem(x.id)}>
+                        Xóa
+                      </button>
                     </td>
                   </tr>
                 );
@@ -386,9 +405,9 @@ function Summary({ title, data, yen }) {
   return (
     <div style={styles.cardMini}>
       <h3>{title}</h3>
-      <p>Tổng mua: {yen(data.buy)}</p>
-      <p>Tổng bán: {yen(data.sell)}</p>
-      <p>Phí sàn: {yen(data.fee)}</p>
+      <p>Mua: {yen(data.buy)}</p>
+      <p>Bán: {yen(data.sell)}</p>
+      <p>Phí: {yen(data.fee)}</p>
       <p>Ship: {yen(data.ship)}</p>
       <h3 style={{ color: data.profit >= 0 ? "#00ff99" : "#ff4444" }}>
         Lãi/Lỗ: {yen(data.profit)}
@@ -402,158 +421,189 @@ const styles = {
     background: "#000",
     minHeight: "100vh",
     color: "#fff",
-    padding: 14,
-    maxWidth: 760,
+    padding: 8,
+    maxWidth: "100%",
     margin: "auto",
+    fontFamily: "Arial, sans-serif",
+    fontSize: 14,
   },
+
   header: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 10,
   },
+
   logo: {
     color: "#00ff99",
     textAlign: "center",
-    fontSize: 42,
+    fontSize: 34,
   },
+
   logoSmall: {
     color: "#00ff99",
-    fontSize: 28,
+    fontSize: 22,
     margin: 0,
   },
+
   menuButton: {
     background: "#00ff99",
     color: "#000",
     border: "none",
     borderRadius: 10,
-    padding: "10px 14px",
+    padding: "8px 12px",
     fontWeight: "bold",
-    fontSize: 20,
+    fontSize: 18,
   },
+
   logoutSmall: {
     background: "#ff4444",
     color: "#fff",
     border: "none",
     borderRadius: 10,
-    padding: "10px 12px",
+    padding: "8px 10px",
     fontWeight: "bold",
+    fontSize: 13,
   },
+
   sideMenu: {
     position: "fixed",
     top: 0,
-    width: 315,
+    width: 280,
     height: "100vh",
     background: "#080808",
     zIndex: 20,
-    padding: 14,
+    padding: 10,
     overflowY: "auto",
     transition: "0.25s",
     borderRight: "1px solid #333",
   },
+
   overlay: {
     position: "fixed",
     inset: 0,
     background: "rgba(0,0,0,0.65)",
     zIndex: 10,
   },
+
   card: {
     background: "#111",
-    padding: 16,
-    borderRadius: 18,
-    marginBottom: 14,
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 10,
   },
+
   cardMini: {
     background: "#111",
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 12,
+    padding: 10,
+    borderRadius: 14,
+    marginBottom: 10,
   },
+
   input: {
     width: "100%",
-    padding: 13,
-    marginBottom: 10,
-    borderRadius: 10,
+    padding: 10,
+    marginBottom: 8,
+    borderRadius: 8,
     border: "1px solid #333",
-    fontSize: 16,
+    fontSize: 14,
+    boxSizing: "border-box",
   },
+
   button: {
     width: "100%",
-    padding: 14,
+    padding: 12,
     borderRadius: 10,
     background: "#00ff99",
     border: "none",
     fontWeight: "bold",
-    fontSize: 16,
-    marginTop: 6,
+    fontSize: 15,
+    marginTop: 4,
   },
+
   redButton: {
     width: "100%",
-    padding: 12,
+    padding: 10,
     borderRadius: 10,
     background: "#ff4444",
     color: "#fff",
     border: "none",
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 8,
   },
+
   grayButton: {
     width: "100%",
-    padding: 12,
+    padding: 10,
     borderRadius: 10,
     background: "#333",
     color: "#fff",
     border: "none",
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 8,
   },
+
   calendar: {
     display: "grid",
     gridTemplateColumns: "repeat(7, 1fr)",
-    gap: 6,
+    gap: 5,
   },
+
   day: {
-    padding: 10,
-    borderRadius: 10,
+    padding: 7,
+    borderRadius: 8,
     border: "1px solid #333",
     fontWeight: "bold",
+    fontSize: 12,
   },
+
   grid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: 8,
+    gap: 6,
   },
+
   checkRow: {
     display: "flex",
-    gap: 10,
+    gap: 8,
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
+
   tableWrap: {
     overflowX: "auto",
+    WebkitOverflowScrolling: "touch",
   },
+
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    minWidth: 950,
+    minWidth: 820,
+    fontSize: 12,
   },
+
   smallGreen: {
     background: "#00ff99",
     color: "#000",
     border: "none",
     borderRadius: 8,
-    padding: "6px 10px",
+    padding: "5px 8px",
     fontWeight: "bold",
-    marginRight: 6,
+    marginRight: 5,
+    fontSize: 12,
   },
+
   smallRed: {
     background: "#ff4444",
     color: "#fff",
     border: "none",
     borderRadius: 8,
-    padding: "6px 10px",
+    padding: "5px 8px",
     fontWeight: "bold",
+    fontSize: 12,
   },
+
   gray: {
     color: "#aaa",
   },
