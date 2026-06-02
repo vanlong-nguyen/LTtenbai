@@ -5,6 +5,8 @@ export default function App() {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState(JSON.parse(localStorage.getItem("items") || "[]"));
   const [editingId, setEditingId] = useState(null);
@@ -19,6 +21,12 @@ export default function App() {
     sold: false,
     note: "",
   });
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("items", JSON.stringify(items));
@@ -144,266 +152,259 @@ export default function App() {
   const month = Number(selectedDate.slice(5, 7));
   const daysInMonth = new Date(year, month, 0).getDate();
 
+  const layout = getStyles(isMobile);
+
   if (!loggedIn) {
     return (
-      <div style={styles.page}>
-        <h1 style={styles.logo}>LTtenbai</h1>
+      <div style={layout.loginPage}>
+        <h1 style={layout.loginLogo}>LTtenbai</h1>
 
-        <div style={styles.card}>
+        <div style={layout.loginCard}>
           <h2>Đăng nhập</h2>
 
-          <input style={styles.input} placeholder="ID" value={id} onChange={(e) => setId(e.target.value)} />
+          <input style={layout.input} placeholder="ID" value={id} onChange={(e) => setId(e.target.value)} />
 
           <input
-            style={styles.input}
+            style={layout.input}
             type="password"
             placeholder="Mật khẩu"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button style={styles.button} onClick={login}>
-            Đăng nhập
-          </button>
-
-          <p style={styles.gray}>ID: admin / Mật khẩu: 123456</p>
+          <button style={layout.button} onClick={login}>Đăng nhập</button>
+          <p style={layout.gray}>ID: admin / Mật khẩu: 123456</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div style={styles.page}>
-      {menuOpen && <div style={styles.overlay} onClick={() => setMenuOpen(false)} />}
+  const sidebar = (
+    <div style={layout.sidebarInner}>
+      <h2 style={{ color: "#00ff99", marginTop: 0 }}>Bảng chọn</h2>
 
-      <div style={{ ...styles.sideMenu, left: menuOpen ? 0 : -295 }}>
-        <h2 style={{ color: "#00ff99" }}>Bảng chọn</h2>
-
-        <button style={styles.redButton} onClick={() => setMenuOpen(false)}>
+      {isMobile && (
+        <button style={layout.redButton} onClick={() => setMenuOpen(false)}>
           Đóng
         </button>
+      )}
 
-        <div style={styles.cardMini}>
-          <h3>Chọn ngày</h3>
+      <div style={layout.cardMini}>
+        <h3>Chọn ngày</h3>
+        <input style={layout.input} type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
 
-          <input
-            style={styles.input}
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-          />
-
-          <div style={styles.grid}>
-            <button style={styles.grayButton} onClick={() => moveDay(-1)}>
-              ← Trước
-            </button>
-
-            <button style={styles.grayButton} onClick={() => moveDay(1)}>
-              Sau →
-            </button>
-          </div>
+        <div style={layout.grid}>
+          <button style={layout.grayButton} onClick={() => moveDay(-1)}>← Trước</button>
+          <button style={layout.grayButton} onClick={() => moveDay(1)}>Sau →</button>
         </div>
-
-        <div style={styles.cardMini}>
-          <h3>Lịch tháng</h3>
-
-          <input
-            style={styles.input}
-            type="month"
-            value={selectedDate.slice(0, 7)}
-            onChange={(e) => setSelectedDate(e.target.value + "-01")}
-          />
-
-          <div style={styles.calendar}>
-            {[...Array(daysInMonth)].map((_, i) => {
-              const day = String(i + 1).padStart(2, "0");
-              const date = selectedDate.slice(0, 8) + day;
-              const hasData = items.some((x) => x.date === date);
-
-              return (
-                <button
-                  key={date}
-                  onClick={() => setSelectedDate(date)}
-                  style={{
-                    ...styles.day,
-                    background:
-                      selectedDate === date ? "#00ff99" : hasData ? "#17382c" : "#050505",
-                    color: selectedDate === date ? "#000" : "#fff",
-                  }}
-                >
-                  {i + 1}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <Summary title="Tổng ngày" data={daySum} yen={yen} />
-        <Summary title="Tổng tháng" data={monthSum} yen={yen} />
-        <Summary title="Tổng năm" data={yearSum} yen={yen} />
       </div>
 
-      <div style={styles.header}>
-        <button style={styles.menuButton} onClick={() => setMenuOpen(true)}>
-          ☰
-        </button>
+      <div style={layout.cardMini}>
+        <h3>Lịch tháng</h3>
 
-        <h1 style={styles.logoSmall}>LTtenbai</h1>
+        <input
+          style={layout.input}
+          type="month"
+          value={selectedDate.slice(0, 7)}
+          onChange={(e) => setSelectedDate(e.target.value + "-01")}
+        />
 
-        <button style={styles.logoutSmall} onClick={logout}>
-          Thoát
-        </button>
+        <div style={layout.calendar}>
+          {[...Array(daysInMonth)].map((_, i) => {
+            const day = String(i + 1).padStart(2, "0");
+            const date = selectedDate.slice(0, 8) + day;
+            const hasData = items.some((x) => x.date === date);
+
+            return (
+              <button
+                key={date}
+                onClick={() => setSelectedDate(date)}
+                style={{
+                  ...layout.day,
+                  background: selectedDate === date ? "#00ff99" : hasData ? "#17382c" : "#050505",
+                  color: selectedDate === date ? "#000" : "#fff",
+                }}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div style={styles.card}>
-        <h2>{editingId ? "Chỉnh sửa" : "Nhập sản phẩm"}</h2>
-        <p style={styles.gray}>Ngày: {selectedDate}</p>
+      <Summary title="Tổng ngày" data={daySum} yen={yen} layout={layout} />
+      <Summary title="Tổng tháng" data={monthSum} yen={yen} layout={layout} />
+      <Summary title="Tổng năm" data={yearSum} yen={yen} layout={layout} />
+    </div>
+  );
 
-        <input
-          style={styles.input}
-          placeholder="Tên hàng"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
+  return (
+    <div style={layout.app}>
+      {isMobile && menuOpen && <div style={layout.overlay} onClick={() => setMenuOpen(false)} />}
 
-        <div style={styles.grid}>
-          <input
-            style={styles.input}
-            type="number"
-            placeholder="SL"
-            value={form.qty}
-            onChange={(e) => setForm({ ...form, qty: e.target.value })}
-          />
-
-          <input
-            style={styles.input}
-            type="number"
-            placeholder="Giá mua"
-            value={form.buyPrice}
-            onChange={(e) => setForm({ ...form, buyPrice: e.target.value })}
-          />
+      {isMobile ? (
+        <div style={{ ...layout.mobileSideMenu, left: menuOpen ? 0 : -295 }}>
+          {sidebar}
         </div>
+      ) : (
+        <div style={layout.desktopSideMenu}>{sidebar}</div>
+      )}
 
-        <div style={styles.grid}>
-          <input
-            style={styles.input}
-            type="number"
-            placeholder="Giá bán"
-            value={form.sellPrice}
-            onChange={(e) => setForm({ ...form, sellPrice: e.target.value })}
-          />
+      <main style={layout.main}>
+        <div style={layout.header}>
+          {isMobile && (
+            <button style={layout.menuButton} onClick={() => setMenuOpen(true)}>
+              ☰
+            </button>
+          )}
 
-          <input
-            style={styles.input}
-            type="number"
-            placeholder="Ship"
-            value={form.ship}
-            onChange={(e) => setForm({ ...form, ship: e.target.value })}
-          />
-        </div>
+          <h1 style={layout.logoSmall}>LTtenbai</h1>
 
-        <select
-          style={styles.input}
-          value={form.place}
-          onChange={(e) => setForm({ ...form, place: e.target.value })}
-        >
-          <option>Qua tay</option>
-          <option>Mercari</option>
-          <option>Yahoo</option>
-          <option>SNKRDUNK</option>
-        </select>
-
-        <label style={styles.checkRow}>
-          <input
-            type="checkbox"
-            checked={form.sold}
-            onChange={(e) => setForm({ ...form, sold: e.target.checked })}
-          />
-          Đã bán
-        </label>
-
-        <input
-          style={styles.input}
-          placeholder="Ghi chú"
-          value={form.note}
-          onChange={(e) => setForm({ ...form, note: e.target.value })}
-        />
-
-        <button style={styles.button} onClick={addItem}>
-          {editingId ? "Cập nhật" : "Thêm vào bảng"}
-        </button>
-
-        {editingId && (
-          <button style={styles.grayButton} onClick={resetForm}>
-            Hủy chỉnh sửa
+          <button style={layout.logoutSmall} onClick={logout}>
+            Thoát
           </button>
-        )}
-      </div>
-
-      <div style={styles.card}>
-        <h2>Bảng sản phẩm</h2>
-        <p style={styles.gray}>Ngày: {selectedDate}</p>
-
-        <div style={styles.tableWrap}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th>Tên</th>
-                <th>SL</th>
-                <th>Mua</th>
-                <th>Bán</th>
-                <th>Kênh</th>
-                <th>Phí</th>
-                <th>Ship</th>
-                <th>Sold</th>
-                <th>Note</th>
-                <th>Lãi</th>
-                <th>Sửa/Xóa</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {todayItems.map((x) => {
-                const profit = calcProfit(x);
-
-                return (
-                  <tr key={x.id}>
-                    <td>{x.name}</td>
-                    <td>{x.qty}</td>
-                    <td>{yen(x.buyPrice)}</td>
-                    <td>{yen(x.sellPrice)}</td>
-                    <td>{x.place}</td>
-                    <td>{yen(x.platformFee)}</td>
-                    <td>{yen(x.ship)}</td>
-                    <td>{x.sold ? "✅" : "⬜"}</td>
-                    <td>{x.note}</td>
-                    <td style={{ color: profit >= 0 ? "#00ff99" : "#ff4444" }}>
-                      {yen(profit)}
-                    </td>
-                    <td>
-                      <button style={styles.smallGreen} onClick={() => editItem(x)}>
-                        Sửa
-                      </button>
-                      <button style={styles.smallRed} onClick={() => deleteItem(x.id)}>
-                        Xóa
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
         </div>
 
-        {todayItems.length === 0 && <p style={styles.gray}>Ngày này chưa có dữ liệu</p>}
-      </div>
+        <div style={layout.card}>
+          <h2>{editingId ? "Chỉnh sửa" : "Nhập sản phẩm"}</h2>
+          <p style={layout.gray}>Ngày: {selectedDate}</p>
+
+          <input
+            style={layout.input}
+            placeholder="Tên hàng"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+
+          <div style={layout.grid}>
+            <input
+              style={layout.input}
+              type="number"
+              placeholder="SL"
+              value={form.qty}
+              onChange={(e) => setForm({ ...form, qty: e.target.value })}
+            />
+
+            <input
+              style={layout.input}
+              type="number"
+              placeholder="Giá mua"
+              value={form.buyPrice}
+              onChange={(e) => setForm({ ...form, buyPrice: e.target.value })}
+            />
+          </div>
+
+          <div style={layout.grid}>
+            <input
+              style={layout.input}
+              type="number"
+              placeholder="Giá bán"
+              value={form.sellPrice}
+              onChange={(e) => setForm({ ...form, sellPrice: e.target.value })}
+            />
+
+            <input
+              style={layout.input}
+              type="number"
+              placeholder="Ship"
+              value={form.ship}
+              onChange={(e) => setForm({ ...form, ship: e.target.value })}
+            />
+          </div>
+
+          <select style={layout.input} value={form.place} onChange={(e) => setForm({ ...form, place: e.target.value })}>
+            <option>Qua tay</option>
+            <option>Mercari</option>
+            <option>Yahoo</option>
+            <option>SNKRDUNK</option>
+          </select>
+
+          <label style={layout.checkRow}>
+            <input
+              type="checkbox"
+              checked={form.sold}
+              onChange={(e) => setForm({ ...form, sold: e.target.checked })}
+            />
+            Đã bán
+          </label>
+
+          <input
+            style={layout.input}
+            placeholder="Ghi chú"
+            value={form.note}
+            onChange={(e) => setForm({ ...form, note: e.target.value })}
+          />
+
+          <button style={layout.button} onClick={addItem}>
+            {editingId ? "Cập nhật" : "Thêm vào bảng"}
+          </button>
+
+          {editingId && (
+            <button style={layout.grayButton} onClick={resetForm}>
+              Hủy chỉnh sửa
+            </button>
+          )}
+        </div>
+
+        <div style={layout.card}>
+          <h2>Bảng sản phẩm</h2>
+          <p style={layout.gray}>Ngày: {selectedDate}</p>
+
+          <div style={layout.tableWrap}>
+            <table style={layout.table}>
+              <thead>
+                <tr>
+                  <th>Tên</th>
+                  <th>SL</th>
+                  <th>Mua</th>
+                  <th>Bán</th>
+                  <th>Kênh</th>
+                  <th>Phí</th>
+                  <th>Ship</th>
+                  <th>Sold</th>
+                  <th>Note</th>
+                  <th>Lãi</th>
+                  <th>Sửa/Xóa</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {todayItems.map((x) => {
+                  const profit = calcProfit(x);
+
+                  return (
+                    <tr key={x.id}>
+                      <td>{x.name}</td>
+                      <td>{x.qty}</td>
+                      <td>{yen(x.buyPrice)}</td>
+                      <td>{yen(x.sellPrice)}</td>
+                      <td>{x.place}</td>
+                      <td>{yen(x.platformFee)}</td>
+                      <td>{yen(x.ship)}</td>
+                      <td>{x.sold ? "✅" : "⬜"}</td>
+                      <td>{x.note}</td>
+                      <td style={{ color: profit >= 0 ? "#00ff99" : "#ff4444" }}>{yen(profit)}</td>
+                      <td>
+                        <button style={layout.smallGreen} onClick={() => editItem(x)}>Sửa</button>
+                        <button style={layout.smallRed} onClick={() => deleteItem(x.id)}>Xóa</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {todayItems.length === 0 && <p style={layout.gray}>Ngày này chưa có dữ liệu</p>}
+        </div>
+      </main>
     </div>
   );
 }
 
-function Summary({ title, data, yen }) {
+function Summary({ title, data, yen, layout }) {
   return (
-    <div style={styles.cardMini}>
+    <div style={layout.cardMini}>
       <h3>{title}</h3>
       <p>Mua: {yen(data.buy)}</p>
       <p>Bán: {yen(data.sell)}</p>
@@ -416,195 +417,235 @@ function Summary({ title, data, yen }) {
   );
 }
 
-const styles = {
-  page: {
-    background: "#000",
-    minHeight: "100vh",
-    color: "#fff",
-    padding: 8,
-    maxWidth: "100%",
-    margin: "auto",
-    fontFamily: "Arial, sans-serif",
-    fontSize: 14,
-  },
+function getStyles(isMobile) {
+  return {
+    app: {
+      background: "#000",
+      minHeight: "100vh",
+      color: "#fff",
+      fontFamily: "Arial, sans-serif",
+      fontSize: isMobile ? 14 : 15,
+      display: isMobile ? "block" : "grid",
+      gridTemplateColumns: isMobile ? "1fr" : "330px 1fr",
+    },
 
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
+    loginPage: {
+      background: "#000",
+      minHeight: "100vh",
+      color: "#fff",
+      padding: isMobile ? 14 : 40,
+      fontFamily: "Arial, sans-serif",
+    },
 
-  logo: {
-    color: "#00ff99",
-    textAlign: "center",
-    fontSize: 34,
-  },
+    loginLogo: {
+      color: "#00ff99",
+      textAlign: "center",
+      fontSize: isMobile ? 38 : 56,
+    },
 
-  logoSmall: {
-    color: "#00ff99",
-    fontSize: 22,
-    margin: 0,
-  },
+    loginCard: {
+      background: "#111",
+      padding: isMobile ? 16 : 28,
+      borderRadius: 18,
+      maxWidth: 420,
+      margin: "auto",
+    },
 
-  menuButton: {
-    background: "#00ff99",
-    color: "#000",
-    border: "none",
-    borderRadius: 10,
-    padding: "8px 12px",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
+    main: {
+      padding: isMobile ? 8 : 22,
+      maxWidth: isMobile ? "100%" : 1180,
+      width: "100%",
+      margin: "0 auto",
+      boxSizing: "border-box",
+    },
 
-  logoutSmall: {
-    background: "#ff4444",
-    color: "#fff",
-    border: "none",
-    borderRadius: 10,
-    padding: "8px 10px",
-    fontWeight: "bold",
-    fontSize: 13,
-  },
+    header: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: isMobile ? 10 : 18,
+    },
 
-  sideMenu: {
-    position: "fixed",
-    top: 0,
-    width: 280,
-    height: "100vh",
-    background: "#080808",
-    zIndex: 20,
-    padding: 10,
-    overflowY: "auto",
-    transition: "0.25s",
-    borderRight: "1px solid #333",
-  },
+    logoSmall: {
+      color: "#00ff99",
+      fontSize: isMobile ? 22 : 34,
+      margin: 0,
+    },
 
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.65)",
-    zIndex: 10,
-  },
+    desktopSideMenu: {
+      background: "#080808",
+      minHeight: "100vh",
+      borderRight: "1px solid #333",
+      padding: 14,
+      boxSizing: "border-box",
+      position: "sticky",
+      top: 0,
+      height: "100vh",
+      overflowY: "auto",
+    },
 
-  card: {
-    background: "#111",
-    padding: 12,
-    borderRadius: 14,
-    marginBottom: 10,
-  },
+    mobileSideMenu: {
+      position: "fixed",
+      top: 0,
+      width: 280,
+      height: "100vh",
+      background: "#080808",
+      zIndex: 20,
+      padding: 10,
+      overflowY: "auto",
+      transition: "0.25s",
+      borderRight: "1px solid #333",
+      boxSizing: "border-box",
+    },
 
-  cardMini: {
-    background: "#111",
-    padding: 10,
-    borderRadius: 14,
-    marginBottom: 10,
-  },
+    sidebarInner: {},
 
-  input: {
-    width: "100%",
-    padding: 10,
-    marginBottom: 8,
-    borderRadius: 8,
-    border: "1px solid #333",
-    fontSize: 14,
-    boxSizing: "border-box",
-  },
+    overlay: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.65)",
+      zIndex: 10,
+    },
 
-  button: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 10,
-    background: "#00ff99",
-    border: "none",
-    fontWeight: "bold",
-    fontSize: 15,
-    marginTop: 4,
-  },
+    card: {
+      background: "#111",
+      padding: isMobile ? 12 : 20,
+      borderRadius: isMobile ? 14 : 18,
+      marginBottom: isMobile ? 10 : 18,
+    },
 
-  redButton: {
-    width: "100%",
-    padding: 10,
-    borderRadius: 10,
-    background: "#ff4444",
-    color: "#fff",
-    border: "none",
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
+    cardMini: {
+      background: "#111",
+      padding: isMobile ? 10 : 14,
+      borderRadius: 14,
+      marginBottom: isMobile ? 10 : 14,
+    },
 
-  grayButton: {
-    width: "100%",
-    padding: 10,
-    borderRadius: 10,
-    background: "#333",
-    color: "#fff",
-    border: "none",
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
+    input: {
+      width: "100%",
+      padding: isMobile ? 10 : 13,
+      marginBottom: isMobile ? 8 : 12,
+      borderRadius: 8,
+      border: "1px solid #333",
+      fontSize: isMobile ? 14 : 16,
+      boxSizing: "border-box",
+    },
 
-  calendar: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7, 1fr)",
-    gap: 5,
-  },
+    button: {
+      width: "100%",
+      padding: isMobile ? 12 : 14,
+      borderRadius: 10,
+      background: "#00ff99",
+      border: "none",
+      fontWeight: "bold",
+      fontSize: isMobile ? 15 : 16,
+      marginTop: 4,
+    },
 
-  day: {
-    padding: 7,
-    borderRadius: 8,
-    border: "1px solid #333",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
+    redButton: {
+      width: "100%",
+      padding: 10,
+      borderRadius: 10,
+      background: "#ff4444",
+      color: "#fff",
+      border: "none",
+      fontWeight: "bold",
+      marginBottom: 8,
+    },
 
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 6,
-  },
+    grayButton: {
+      width: "100%",
+      padding: 10,
+      borderRadius: 10,
+      background: "#333",
+      color: "#fff",
+      border: "none",
+      fontWeight: "bold",
+      marginBottom: 8,
+    },
 
-  checkRow: {
-    display: "flex",
-    gap: 8,
-    alignItems: "center",
-    marginBottom: 10,
-  },
+    menuButton: {
+      background: "#00ff99",
+      color: "#000",
+      border: "none",
+      borderRadius: 10,
+      padding: "8px 12px",
+      fontWeight: "bold",
+      fontSize: 18,
+    },
 
-  tableWrap: {
-    overflowX: "auto",
-    WebkitOverflowScrolling: "touch",
-  },
+    logoutSmall: {
+      background: "#ff4444",
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      padding: isMobile ? "8px 10px" : "10px 16px",
+      fontWeight: "bold",
+      fontSize: isMobile ? 13 : 15,
+    },
 
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    minWidth: 820,
-    fontSize: 12,
-  },
+    calendar: {
+      display: "grid",
+      gridTemplateColumns: "repeat(7, 1fr)",
+      gap: isMobile ? 5 : 7,
+    },
 
-  smallGreen: {
-    background: "#00ff99",
-    color: "#000",
-    border: "none",
-    borderRadius: 8,
-    padding: "5px 8px",
-    fontWeight: "bold",
-    marginRight: 5,
-    fontSize: 12,
-  },
+    day: {
+      padding: isMobile ? 7 : 10,
+      borderRadius: 8,
+      border: "1px solid #333",
+      fontWeight: "bold",
+      fontSize: isMobile ? 12 : 14,
+    },
 
-  smallRed: {
-    background: "#ff4444",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    padding: "5px 8px",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
+    grid: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: isMobile ? 6 : 10,
+    },
 
-  gray: {
-    color: "#aaa",
-  },
-};
+    checkRow: {
+      display: "flex",
+      gap: 8,
+      alignItems: "center",
+      marginBottom: 10,
+    },
+
+    tableWrap: {
+      overflowX: "auto",
+      WebkitOverflowScrolling: "touch",
+    },
+
+    table: {
+      width: "100%",
+      borderCollapse: "collapse",
+      minWidth: isMobile ? 820 : 1050,
+      fontSize: isMobile ? 12 : 14,
+    },
+
+    smallGreen: {
+      background: "#00ff99",
+      color: "#000",
+      border: "none",
+      borderRadius: 8,
+      padding: isMobile ? "5px 8px" : "7px 11px",
+      fontWeight: "bold",
+      marginRight: 5,
+      fontSize: isMobile ? 12 : 13,
+    },
+
+    smallRed: {
+      background: "#ff4444",
+      color: "#fff",
+      border: "none",
+      borderRadius: 8,
+      padding: isMobile ? "5px 8px" : "7px 11px",
+      fontWeight: "bold",
+      fontSize: isMobile ? 12 : 13,
+    },
+
+    gray: {
+      color: "#aaa",
+    },
+  };
+}
