@@ -18,6 +18,8 @@ export default function App() {
     sellPrice: "",
     ship: "",
     place: "Qua tay",
+    online: false,
+    shipped: false,
     sold: false,
     note: "",
   });
@@ -69,6 +71,8 @@ export default function App() {
       sellPrice: "",
       ship: "",
       place: "Qua tay",
+      online: false,
+      shipped: false,
       sold: false,
       note: "",
     });
@@ -89,6 +93,8 @@ export default function App() {
       sellPrice: Number(form.sellPrice || 0),
       ship: Number(form.ship || 0),
       place: form.place,
+      online: form.online,
+      shipped: form.shipped,
       sold: form.sold,
       note: form.note,
       platformFee,
@@ -107,14 +113,16 @@ export default function App() {
     setSelectedDate(item.date);
     setEditingId(item.id);
     setForm({
-      name: item.name,
-      qty: item.qty,
-      buyPrice: item.buyPrice,
-      sellPrice: item.sellPrice,
-      ship: item.ship,
-      place: item.place,
-      sold: item.sold,
-      note: item.note,
+      name: item.name || "",
+      qty: item.qty || "",
+      buyPrice: item.buyPrice || "",
+      sellPrice: item.sellPrice || "",
+      ship: item.ship || "",
+      place: item.place || "Qua tay",
+      online: item.online || false,
+      shipped: item.shipped || false,
+      sold: item.sold || false,
+      note: item.note || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -134,6 +142,7 @@ export default function App() {
   const todayItems = items.filter((x) => x.date === selectedDate);
   const monthItems = items.filter((x) => x.date.slice(0, 7) === selectedDate.slice(0, 7));
   const yearItems = items.filter((x) => x.date.slice(0, 4) === selectedDate.slice(0, 4));
+  const waitingShip = items.filter((x) => x.online && !x.shipped);
 
   const makeSummary = (arr) => {
     const buy = arr.reduce((s, x) => s + x.qty * x.buyPrice, 0);
@@ -197,6 +206,24 @@ export default function App() {
           <button style={layout.grayButton} onClick={() => moveDay(-1)}>← Trước</button>
           <button style={layout.grayButton} onClick={() => moveDay(1)}>Sau →</button>
         </div>
+      </div>
+
+      <div style={layout.cardMini}>
+        <h3>Mua online chưa ship</h3>
+        <p>Số món: {waitingShip.length}</p>
+
+        {waitingShip.length === 0 && (
+          <p style={layout.gray}>Không có hàng đang chờ ship</p>
+        )}
+
+        {waitingShip.map((x) => (
+          <div key={x.id} style={layout.waitingItem}>
+            <b>{x.name}</b>
+            <div>SL: {x.qty}</div>
+            <div>Ngày mua: {x.date}</div>
+            <div>Giá mua: {yen(x.buyPrice)}</div>
+          </div>
+        ))}
       </div>
 
       <div style={layout.cardMini}>
@@ -322,6 +349,24 @@ export default function App() {
           <label style={layout.checkRow}>
             <input
               type="checkbox"
+              checked={form.online}
+              onChange={(e) => setForm({ ...form, online: e.target.checked })}
+            />
+            Mua online
+          </label>
+
+          <label style={layout.checkRow}>
+            <input
+              type="checkbox"
+              checked={form.shipped}
+              onChange={(e) => setForm({ ...form, shipped: e.target.checked })}
+            />
+            Đã ship về nhà
+          </label>
+
+          <label style={layout.checkRow}>
+            <input
+              type="checkbox"
               checked={form.sold}
               onChange={(e) => setForm({ ...form, sold: e.target.checked })}
             />
@@ -361,6 +406,8 @@ export default function App() {
                   <th>Kênh</th>
                   <th>Phí</th>
                   <th>Ship</th>
+                  <th>Online</th>
+                  <th>Đã ship</th>
                   <th>Sold</th>
                   <th>Note</th>
                   <th>Lãi</th>
@@ -381,6 +428,8 @@ export default function App() {
                       <td>{x.place}</td>
                       <td>{yen(x.platformFee)}</td>
                       <td>{yen(x.ship)}</td>
+                      <td>{x.online ? "✅" : "⬜"}</td>
+                      <td>{x.shipped ? "✅" : "⬜"}</td>
                       <td>{x.sold ? "✅" : "⬜"}</td>
                       <td>{x.note}</td>
                       <td style={{ color: profit >= 0 ? "#00ff99" : "#ff4444" }}>{yen(profit)}</td>
@@ -611,6 +660,12 @@ function getStyles(isMobile) {
       marginBottom: 10,
     },
 
+    waitingItem: {
+      borderBottom: "1px solid #333",
+      padding: "7px 0",
+      fontSize: isMobile ? 13 : 14,
+    },
+
     tableWrap: {
       overflowX: "auto",
       WebkitOverflowScrolling: "touch",
@@ -619,7 +674,7 @@ function getStyles(isMobile) {
     table: {
       width: "100%",
       borderCollapse: "collapse",
-      minWidth: isMobile ? 820 : 1050,
+      minWidth: isMobile ? 980 : 1180,
       fontSize: isMobile ? 12 : 14,
     },
 
