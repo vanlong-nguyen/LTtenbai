@@ -6,6 +6,7 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [activeView, setActiveView] = useState("dashboard");
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState(JSON.parse(localStorage.getItem("items") || "[]"));
@@ -20,6 +21,8 @@ export default function App() {
     place: "Qua tay",
     online: false,
     shipped: false,
+    preorder: false,
+    preorderReceived: false,
     sold: false,
     note: "",
   });
@@ -73,6 +76,8 @@ export default function App() {
       place: "Qua tay",
       online: false,
       shipped: false,
+      preorder: false,
+      preorderReceived: false,
       sold: false,
       note: "",
     });
@@ -95,6 +100,8 @@ export default function App() {
       place: form.place,
       online: form.online,
       shipped: form.shipped,
+      preorder: form.preorder,
+      preorderReceived: form.preorderReceived,
       sold: form.sold,
       note: form.note,
       platformFee,
@@ -112,6 +119,8 @@ export default function App() {
   const editItem = (item) => {
     setSelectedDate(item.date);
     setEditingId(item.id);
+    setActiveView("dashboard");
+
     setForm({
       name: item.name || "",
       qty: item.qty || "",
@@ -121,9 +130,12 @@ export default function App() {
       place: item.place || "Qua tay",
       online: item.online || false,
       shipped: item.shipped || false,
+      preorder: item.preorder || false,
+      preorderReceived: item.preorderReceived || false,
       sold: item.sold || false,
       note: item.note || "",
     });
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -142,7 +154,11 @@ export default function App() {
   const todayItems = items.filter((x) => x.date === selectedDate);
   const monthItems = items.filter((x) => x.date.slice(0, 7) === selectedDate.slice(0, 7));
   const yearItems = items.filter((x) => x.date.slice(0, 4) === selectedDate.slice(0, 4));
-  const waitingShip = items.filter((x) => x.online && !x.shipped);
+
+  const soldItems = items.filter((x) => x.sold);
+  const unsoldItems = items.filter((x) => !x.sold);
+  const onlineItems = items.filter((x) => x.online);
+  const preorderItems = items.filter((x) => x.preorder);
 
   const makeSummary = (arr) => {
     const buy = arr.reduce((s, x) => s + x.qty * x.buyPrice, 0);
@@ -156,6 +172,14 @@ export default function App() {
   const daySum = makeSummary(todayItems);
   const monthSum = makeSummary(monthItems);
   const yearSum = makeSummary(yearItems);
+
+  const dailySummaries = Object.values(
+    items.reduce((acc, item) => {
+      if (!acc[item.date]) acc[item.date] = { date: item.date, items: [] };
+      acc[item.date].items.push(item);
+      return acc;
+    }, {})
+  ).sort((a, b) => b.date.localeCompare(a.date));
 
   const year = Number(selectedDate.slice(0, 4));
   const month = Number(selectedDate.slice(5, 7));
@@ -188,15 +212,41 @@ export default function App() {
     );
   }
 
+  const openView = (view) => {
+    setActiveView(view);
+    if (isMobile) setMenuOpen(false);
+  };
+
   const sidebar = (
-    <div style={layout.sidebarInner}>
-      <h2 style={{ color: "#00ff99", marginTop: 0 }}>Bảng chọn</h2>
+    <div>
+      <h2 style={{ color: "#00ff99", marginTop: 0 }}>Menu</h2>
 
       {isMobile && (
         <button style={layout.redButton} onClick={() => setMenuOpen(false)}>
           Đóng
         </button>
       )}
+
+      <div style={layout.cardMini}>
+        <button style={layout.menuItem} onClick={() => openView("dashboard")}>
+          Nhập sản phẩm
+        </button>
+        <button style={layout.menuItem} onClick={() => openView("sold")}>
+          Hàng đã bán
+        </button>
+        <button style={layout.menuItem} onClick={() => openView("unsold")}>
+          Hàng chưa bán
+        </button>
+        <button style={layout.menuItem} onClick={() => openView("online")}>
+          Hàng mua online
+        </button>
+        <button style={layout.menuItem} onClick={() => openView("preorder")}>
+          Hàng 予約
+        </button>
+        <button style={layout.menuItem} onClick={() => openView("daily")}>
+          Tổng theo từng ngày
+        </button>
+      </div>
 
       <div style={layout.cardMini}>
         <h3>Chọn ngày</h3>
@@ -206,24 +256,6 @@ export default function App() {
           <button style={layout.grayButton} onClick={() => moveDay(-1)}>← Trước</button>
           <button style={layout.grayButton} onClick={() => moveDay(1)}>Sau →</button>
         </div>
-      </div>
-
-      <div style={layout.cardMini}>
-        <h3>Mua online chưa ship</h3>
-        <p>Số món: {waitingShip.length}</p>
-
-        {waitingShip.length === 0 && (
-          <p style={layout.gray}>Không có hàng đang chờ ship</p>
-        )}
-
-        {waitingShip.map((x) => (
-          <div key={x.id} style={layout.waitingItem}>
-            <b>{x.name}</b>
-            <div>SL: {x.qty}</div>
-            <div>Ngày mua: {x.date}</div>
-            <div>Giá mua: {yen(x.buyPrice)}</div>
-          </div>
-        ))}
       </div>
 
       <div style={layout.cardMini}>
@@ -292,160 +324,149 @@ export default function App() {
           </button>
         </div>
 
-        <div style={layout.card}>
-          <h2>{editingId ? "Chỉnh sửa" : "Nhập sản phẩm"}</h2>
-          <p style={layout.gray}>Ngày: {selectedDate}</p>
+        {activeView === "dashboard" && (
+          <>
+            <div style={layout.card}>
+              <h2>{editingId ? "Chỉnh sửa" : "Nhập sản phẩm"}</h2>
+              <p style={layout.gray}>Ngày: {selectedDate}</p>
 
-          <input
-            style={layout.input}
-            placeholder="Tên hàng"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
+              <input
+                style={layout.input}
+                placeholder="Tên hàng"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
 
-          <div style={layout.grid}>
-            <input
-              style={layout.input}
-              type="number"
-              placeholder="SL"
-              value={form.qty}
-              onChange={(e) => setForm({ ...form, qty: e.target.value })}
-            />
+              <div style={layout.grid}>
+                <input
+                  style={layout.input}
+                  type="number"
+                  placeholder="SL"
+                  value={form.qty}
+                  onChange={(e) => setForm({ ...form, qty: e.target.value })}
+                />
 
-            <input
-              style={layout.input}
-              type="number"
-              placeholder="Giá mua"
-              value={form.buyPrice}
-              onChange={(e) => setForm({ ...form, buyPrice: e.target.value })}
-            />
+                <input
+                  style={layout.input}
+                  type="number"
+                  placeholder="Giá mua"
+                  value={form.buyPrice}
+                  onChange={(e) => setForm({ ...form, buyPrice: e.target.value })}
+                />
+              </div>
+
+              <div style={layout.grid}>
+                <input
+                  style={layout.input}
+                  type="number"
+                  placeholder="Giá bán"
+                  value={form.sellPrice}
+                  onChange={(e) => setForm({ ...form, sellPrice: e.target.value })}
+                />
+
+                <input
+                  style={layout.input}
+                  type="number"
+                  placeholder="Ship"
+                  value={form.ship}
+                  onChange={(e) => setForm({ ...form, ship: e.target.value })}
+                />
+              </div>
+
+              <select style={layout.input} value={form.place} onChange={(e) => setForm({ ...form, place: e.target.value })}>
+                <option>Qua tay</option>
+                <option>Mercari</option>
+                <option>Yahoo</option>
+                <option>SNKRDUNK</option>
+              </select>
+
+              <label style={layout.checkRow}>
+                <input type="checkbox" checked={form.online} onChange={(e) => setForm({ ...form, online: e.target.checked })} />
+                Mua online
+              </label>
+
+              <label style={layout.checkRow}>
+                <input type="checkbox" checked={form.shipped} onChange={(e) => setForm({ ...form, shipped: e.target.checked })} />
+                Đã ship về nhà
+              </label>
+
+              <label style={layout.checkRow}>
+                <input type="checkbox" checked={form.preorder} onChange={(e) => setForm({ ...form, preorder: e.target.checked })} />
+                Hàng 予約
+              </label>
+
+              <label style={layout.checkRow}>
+                <input
+                  type="checkbox"
+                  checked={form.preorderReceived}
+                  onChange={(e) => setForm({ ...form, preorderReceived: e.target.checked })}
+                />
+                Đã nhận hàng 予約
+              </label>
+
+              <label style={layout.checkRow}>
+                <input type="checkbox" checked={form.sold} onChange={(e) => setForm({ ...form, sold: e.target.checked })} />
+                Đã bán
+              </label>
+
+              <input
+                style={layout.input}
+                placeholder="Ghi chú"
+                value={form.note}
+                onChange={(e) => setForm({ ...form, note: e.target.value })}
+              />
+
+              <button style={layout.button} onClick={addItem}>
+                {editingId ? "Cập nhật" : "Thêm vào bảng"}
+              </button>
+
+              {editingId && (
+                <button style={layout.grayButton} onClick={resetForm}>
+                  Hủy chỉnh sửa
+                </button>
+              )}
+            </div>
+
+            <ItemTable title={`Bảng sản phẩm ngày ${selectedDate}`} items={todayItems} yen={yen} calcProfit={calcProfit} editItem={editItem} deleteItem={deleteItem} layout={layout} />
+          </>
+        )}
+
+        {activeView === "sold" && (
+          <ListView title="Hàng đã bán" items={soldItems} yen={yen} calcProfit={calcProfit} editItem={editItem} deleteItem={deleteItem} layout={layout} />
+        )}
+
+        {activeView === "unsold" && (
+          <ListView title="Hàng chưa bán" items={unsoldItems} yen={yen} calcProfit={calcProfit} editItem={editItem} deleteItem={deleteItem} layout={layout} />
+        )}
+
+        {activeView === "online" && (
+          <ListView title="Hàng mua online" items={onlineItems} yen={yen} calcProfit={calcProfit} editItem={editItem} deleteItem={deleteItem} layout={layout} />
+        )}
+
+        {activeView === "preorder" && (
+          <ListView title="Hàng 予約" items={preorderItems} yen={yen} calcProfit={calcProfit} editItem={editItem} deleteItem={deleteItem} layout={layout} />
+        )}
+
+        {activeView === "daily" && (
+          <div style={layout.card}>
+            <h2>Tổng theo từng ngày</h2>
+            {dailySummaries.map((d) => {
+              const sum = makeSummary(d.items);
+              return (
+                <div key={d.date} style={layout.dailyBox}>
+                  <h3>{d.date}</h3>
+                  <p>Mua: {yen(sum.buy)}</p>
+                  <p>Bán: {yen(sum.sell)}</p>
+                  <p>Phí: {yen(sum.fee)}</p>
+                  <p>Ship: {yen(sum.ship)}</p>
+                  <h3 style={{ color: sum.profit >= 0 ? "#00ff99" : "#ff4444" }}>
+                    Lãi/Lỗ: {yen(sum.profit)}
+                  </h3>
+                </div>
+              );
+            })}
           </div>
-
-          <div style={layout.grid}>
-            <input
-              style={layout.input}
-              type="number"
-              placeholder="Giá bán"
-              value={form.sellPrice}
-              onChange={(e) => setForm({ ...form, sellPrice: e.target.value })}
-            />
-
-            <input
-              style={layout.input}
-              type="number"
-              placeholder="Ship"
-              value={form.ship}
-              onChange={(e) => setForm({ ...form, ship: e.target.value })}
-            />
-          </div>
-
-          <select style={layout.input} value={form.place} onChange={(e) => setForm({ ...form, place: e.target.value })}>
-            <option>Qua tay</option>
-            <option>Mercari</option>
-            <option>Yahoo</option>
-            <option>SNKRDUNK</option>
-          </select>
-
-          <label style={layout.checkRow}>
-            <input
-              type="checkbox"
-              checked={form.online}
-              onChange={(e) => setForm({ ...form, online: e.target.checked })}
-            />
-            Mua online
-          </label>
-
-          <label style={layout.checkRow}>
-            <input
-              type="checkbox"
-              checked={form.shipped}
-              onChange={(e) => setForm({ ...form, shipped: e.target.checked })}
-            />
-            Đã ship về nhà
-          </label>
-
-          <label style={layout.checkRow}>
-            <input
-              type="checkbox"
-              checked={form.sold}
-              onChange={(e) => setForm({ ...form, sold: e.target.checked })}
-            />
-            Đã bán
-          </label>
-
-          <input
-            style={layout.input}
-            placeholder="Ghi chú"
-            value={form.note}
-            onChange={(e) => setForm({ ...form, note: e.target.value })}
-          />
-
-          <button style={layout.button} onClick={addItem}>
-            {editingId ? "Cập nhật" : "Thêm vào bảng"}
-          </button>
-
-          {editingId && (
-            <button style={layout.grayButton} onClick={resetForm}>
-              Hủy chỉnh sửa
-            </button>
-          )}
-        </div>
-
-        <div style={layout.card}>
-          <h2>Bảng sản phẩm</h2>
-          <p style={layout.gray}>Ngày: {selectedDate}</p>
-
-          <div style={layout.tableWrap}>
-            <table style={layout.table}>
-              <thead>
-                <tr>
-                  <th>Tên</th>
-                  <th>SL</th>
-                  <th>Mua</th>
-                  <th>Bán</th>
-                  <th>Kênh</th>
-                  <th>Phí</th>
-                  <th>Ship</th>
-                  <th>Online</th>
-                  <th>Đã ship</th>
-                  <th>Sold</th>
-                  <th>Note</th>
-                  <th>Lãi</th>
-                  <th>Sửa/Xóa</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {todayItems.map((x) => {
-                  const profit = calcProfit(x);
-
-                  return (
-                    <tr key={x.id}>
-                      <td>{x.name}</td>
-                      <td>{x.qty}</td>
-                      <td>{yen(x.buyPrice)}</td>
-                      <td>{yen(x.sellPrice)}</td>
-                      <td>{x.place}</td>
-                      <td>{yen(x.platformFee)}</td>
-                      <td>{yen(x.ship)}</td>
-                      <td>{x.online ? "✅" : "⬜"}</td>
-                      <td>{x.shipped ? "✅" : "⬜"}</td>
-                      <td>{x.sold ? "✅" : "⬜"}</td>
-                      <td>{x.note}</td>
-                      <td style={{ color: profit >= 0 ? "#00ff99" : "#ff4444" }}>{yen(profit)}</td>
-                      <td>
-                        <button style={layout.smallGreen} onClick={() => editItem(x)}>Sửa</button>
-                        <button style={layout.smallRed} onClick={() => deleteItem(x.id)}>Xóa</button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {todayItems.length === 0 && <p style={layout.gray}>Ngày này chưa có dữ liệu</p>}
-        </div>
+        )}
       </main>
     </div>
   );
@@ -466,6 +487,93 @@ function Summary({ title, data, yen, layout }) {
   );
 }
 
+function ListView({ title, items, yen, calcProfit, editItem, deleteItem, layout }) {
+  const totalBuy = items.reduce((s, x) => s + x.qty * x.buyPrice, 0);
+  const totalSell = items.reduce((s, x) => s + (x.sold ? x.qty * x.sellPrice : 0), 0);
+  const totalProfit = items.reduce((s, x) => s + calcProfit(x), 0);
+
+  return (
+    <>
+      <div style={layout.card}>
+        <h2>{title}</h2>
+        <p>Số món: {items.length}</p>
+        <p>Tổng vốn: {yen(totalBuy)}</p>
+        <p>Tổng bán: {yen(totalSell)}</p>
+        <h3 style={{ color: totalProfit >= 0 ? "#00ff99" : "#ff4444" }}>
+          Tổng lãi/lỗ: {yen(totalProfit)}
+        </h3>
+      </div>
+
+      <ItemTable title={title} items={items} yen={yen} calcProfit={calcProfit} editItem={editItem} deleteItem={deleteItem} layout={layout} />
+    </>
+  );
+}
+
+function ItemTable({ title, items, yen, calcProfit, editItem, deleteItem, layout }) {
+  return (
+    <div style={layout.card}>
+      <h2>{title}</h2>
+
+      <div style={layout.tableWrap}>
+        <table style={layout.table}>
+          <thead>
+            <tr>
+              <th>Ngày</th>
+              <th>Tên</th>
+              <th>SL</th>
+              <th>Mua</th>
+              <th>Bán</th>
+              <th>Kênh</th>
+              <th>Phí</th>
+              <th>Ship</th>
+              <th>Online</th>
+              <th>Đã ship</th>
+              <th>予約</th>
+              <th>Nhận予約</th>
+              <th>Sold</th>
+              <th>Note</th>
+              <th>Lãi</th>
+              <th>Sửa/Xóa</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {items.map((x) => {
+              const profit = calcProfit(x);
+
+              return (
+                <tr key={x.id}>
+                  <td>{x.date}</td>
+                  <td>{x.name}</td>
+                  <td>{x.qty}</td>
+                  <td>{yen(x.buyPrice)}</td>
+                  <td>{yen(x.sellPrice)}</td>
+                  <td>{x.place}</td>
+                  <td>{yen(x.platformFee)}</td>
+                  <td>{yen(x.ship)}</td>
+                  <td>{x.online ? "✅" : "⬜"}</td>
+                  <td>{x.shipped ? "✅" : "⬜"}</td>
+                  <td>{x.preorder ? "✅" : "⬜"}</td>
+                  <td>{x.preorderReceived ? "✅" : "⬜"}</td>
+                  <td>{x.sold ? "✅" : "⬜"}</td>
+                  <td>{x.note}</td>
+                  <td style={{ color: profit >= 0 ? "#00ff99" : "#ff4444" }}>{yen(profit)}</td>
+                  <td>
+                    <button style={layout.smallGreen} onClick={() => editItem(x)}>Sửa</button>
+                    <button style={layout.smallRed} onClick={() => deleteItem(x.id)}>Xóa</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {items.length === 0 && <p style={layout.gray}>Chưa có dữ liệu</p>}
+    </div>
+  );
+}
+
 function getStyles(isMobile) {
   return {
     app: {
@@ -477,7 +585,6 @@ function getStyles(isMobile) {
       display: isMobile ? "block" : "grid",
       gridTemplateColumns: isMobile ? "1fr" : "330px 1fr",
     },
-
     loginPage: {
       background: "#000",
       minHeight: "100vh",
@@ -485,13 +592,11 @@ function getStyles(isMobile) {
       padding: isMobile ? 14 : 40,
       fontFamily: "Arial, sans-serif",
     },
-
     loginLogo: {
       color: "#00ff99",
       textAlign: "center",
       fontSize: isMobile ? 38 : 56,
     },
-
     loginCard: {
       background: "#111",
       padding: isMobile ? 16 : 28,
@@ -499,7 +604,6 @@ function getStyles(isMobile) {
       maxWidth: 420,
       margin: "auto",
     },
-
     main: {
       padding: isMobile ? 8 : 22,
       maxWidth: isMobile ? "100%" : 1180,
@@ -507,20 +611,17 @@ function getStyles(isMobile) {
       margin: "0 auto",
       boxSizing: "border-box",
     },
-
     header: {
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
       marginBottom: isMobile ? 10 : 18,
     },
-
     logoSmall: {
       color: "#00ff99",
       fontSize: isMobile ? 22 : 34,
       margin: 0,
     },
-
     desktopSideMenu: {
       background: "#080808",
       minHeight: "100vh",
@@ -532,7 +633,6 @@ function getStyles(isMobile) {
       height: "100vh",
       overflowY: "auto",
     },
-
     mobileSideMenu: {
       position: "fixed",
       top: 0,
@@ -546,30 +646,24 @@ function getStyles(isMobile) {
       borderRight: "1px solid #333",
       boxSizing: "border-box",
     },
-
-    sidebarInner: {},
-
     overlay: {
       position: "fixed",
       inset: 0,
       background: "rgba(0,0,0,0.65)",
       zIndex: 10,
     },
-
     card: {
       background: "#111",
       padding: isMobile ? 12 : 20,
       borderRadius: isMobile ? 14 : 18,
       marginBottom: isMobile ? 10 : 18,
     },
-
     cardMini: {
       background: "#111",
       padding: isMobile ? 10 : 14,
       borderRadius: 14,
       marginBottom: isMobile ? 10 : 14,
     },
-
     input: {
       width: "100%",
       padding: isMobile ? 10 : 13,
@@ -579,7 +673,6 @@ function getStyles(isMobile) {
       fontSize: isMobile ? 14 : 16,
       boxSizing: "border-box",
     },
-
     button: {
       width: "100%",
       padding: isMobile ? 12 : 14,
@@ -590,7 +683,6 @@ function getStyles(isMobile) {
       fontSize: isMobile ? 15 : 16,
       marginTop: 4,
     },
-
     redButton: {
       width: "100%",
       padding: 10,
@@ -601,7 +693,6 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       marginBottom: 8,
     },
-
     grayButton: {
       width: "100%",
       padding: 10,
@@ -612,7 +703,6 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       marginBottom: 8,
     },
-
     menuButton: {
       background: "#00ff99",
       color: "#000",
@@ -622,7 +712,6 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       fontSize: 18,
     },
-
     logoutSmall: {
       background: "#ff4444",
       color: "#fff",
@@ -632,13 +721,22 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       fontSize: isMobile ? 13 : 15,
     },
-
+    menuItem: {
+      width: "100%",
+      background: "#050505",
+      color: "#fff",
+      border: "1px solid #333",
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 8,
+      textAlign: "left",
+      fontWeight: "bold",
+    },
     calendar: {
       display: "grid",
       gridTemplateColumns: "repeat(7, 1fr)",
       gap: isMobile ? 5 : 7,
     },
-
     day: {
       padding: isMobile ? 7 : 10,
       borderRadius: 8,
@@ -646,38 +744,31 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       fontSize: isMobile ? 12 : 14,
     },
-
     grid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: isMobile ? 6 : 10,
     },
-
     checkRow: {
       display: "flex",
       gap: 8,
       alignItems: "center",
       marginBottom: 10,
     },
-
-    waitingItem: {
-      borderBottom: "1px solid #333",
-      padding: "7px 0",
-      fontSize: isMobile ? 13 : 14,
-    },
-
     tableWrap: {
       overflowX: "auto",
       WebkitOverflowScrolling: "touch",
     },
-
     table: {
       width: "100%",
       borderCollapse: "collapse",
-      minWidth: isMobile ? 980 : 1180,
+      minWidth: isMobile ? 1250 : 1450,
       fontSize: isMobile ? 12 : 14,
     },
-
+    dailyBox: {
+      borderBottom: "1px solid #333",
+      padding: "10px 0",
+    },
     smallGreen: {
       background: "#00ff99",
       color: "#000",
@@ -688,7 +779,6 @@ function getStyles(isMobile) {
       marginRight: 5,
       fontSize: isMobile ? 12 : 13,
     },
-
     smallRed: {
       background: "#ff4444",
       color: "#fff",
@@ -698,7 +788,6 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       fontSize: isMobile ? 12 : 13,
     },
-
     gray: {
       color: "#aaa",
     },
