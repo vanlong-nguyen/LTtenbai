@@ -205,7 +205,10 @@ export default function App() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button style={layout.button} onClick={login}>Đăng nhập</button>
+          <button style={layout.button} onClick={login}>
+            Đăng nhập
+          </button>
+
           <p style={layout.gray}>ID: admin / Mật khẩu: 123456</p>
         </div>
       </div>
@@ -217,6 +220,17 @@ export default function App() {
     if (isMobile) setMenuOpen(false);
   };
 
+  const quickMenu = (
+    <div style={layout.quickMenu}>
+      <button style={layout.quickMenuItem} onClick={() => openView("dashboard")}>Nhập</button>
+      <button style={layout.quickMenuItem} onClick={() => openView("sold")}>Hàng đã bán</button>
+      <button style={layout.quickMenuItem} onClick={() => openView("unsold")}>Hàng chưa bán</button>
+      <button style={layout.quickMenuItem} onClick={() => openView("online")}>Hàng mua online</button>
+      <button style={layout.quickMenuItem} onClick={() => openView("preorder")}>Hàng 予約</button>
+      <button style={layout.quickMenuItem} onClick={() => openView("daily")}>Tổng theo từng ngày</button>
+    </div>
+  );
+
   const sidebar = (
     <div>
       <h2 style={{ color: "#00ff99", marginTop: 0 }}>Menu</h2>
@@ -226,27 +240,6 @@ export default function App() {
           Đóng
         </button>
       )}
-
-      <div style={layout.cardMini}>
-        <button style={layout.menuItem} onClick={() => openView("dashboard")}>
-          Nhập sản phẩm
-        </button>
-        <button style={layout.menuItem} onClick={() => openView("sold")}>
-          Hàng đã bán
-        </button>
-        <button style={layout.menuItem} onClick={() => openView("unsold")}>
-          Hàng chưa bán
-        </button>
-        <button style={layout.menuItem} onClick={() => openView("online")}>
-          Hàng mua online
-        </button>
-        <button style={layout.menuItem} onClick={() => openView("preorder")}>
-          Hàng 予約
-        </button>
-        <button style={layout.menuItem} onClick={() => openView("daily")}>
-          Tổng theo từng ngày
-        </button>
-      </div>
 
       <div style={layout.cardMini}>
         <h3>Chọn ngày</h3>
@@ -323,6 +316,9 @@ export default function App() {
             Thoát
           </button>
         </div>
+
+        {isMobile && quickMenu}
+        {!isMobile && quickMenu}
 
         {activeView === "dashboard" && (
           <>
@@ -585,6 +581,7 @@ function getStyles(isMobile) {
       display: isMobile ? "block" : "grid",
       gridTemplateColumns: isMobile ? "1fr" : "330px 1fr",
     },
+
     loginPage: {
       background: "#000",
       minHeight: "100vh",
@@ -592,11 +589,13 @@ function getStyles(isMobile) {
       padding: isMobile ? 14 : 40,
       fontFamily: "Arial, sans-serif",
     },
+
     loginLogo: {
       color: "#00ff99",
       textAlign: "center",
       fontSize: isMobile ? 38 : 56,
     },
+
     loginCard: {
       background: "#111",
       padding: isMobile ? 16 : 28,
@@ -604,6 +603,7 @@ function getStyles(isMobile) {
       maxWidth: 420,
       margin: "auto",
     },
+
     main: {
       padding: isMobile ? 8 : 22,
       maxWidth: isMobile ? "100%" : 1180,
@@ -611,17 +611,20 @@ function getStyles(isMobile) {
       margin: "0 auto",
       boxSizing: "border-box",
     },
+
     header: {
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
       marginBottom: isMobile ? 10 : 18,
     },
+
     logoSmall: {
       color: "#00ff99",
       fontSize: isMobile ? 22 : 34,
       margin: 0,
     },
+
     desktopSideMenu: {
       background: "#080808",
       minHeight: "100vh",
@@ -633,6 +636,7 @@ function getStyles(isMobile) {
       height: "100vh",
       overflowY: "auto",
     },
+
     mobileSideMenu: {
       position: "fixed",
       top: 0,
@@ -646,24 +650,28 @@ function getStyles(isMobile) {
       borderRight: "1px solid #333",
       boxSizing: "border-box",
     },
+
     overlay: {
       position: "fixed",
       inset: 0,
       background: "rgba(0,0,0,0.65)",
       zIndex: 10,
     },
+
     card: {
       background: "#111",
       padding: isMobile ? 12 : 20,
       borderRadius: isMobile ? 14 : 18,
       marginBottom: isMobile ? 10 : 18,
     },
+
     cardMini: {
       background: "#111",
       padding: isMobile ? 10 : 14,
       borderRadius: 14,
       marginBottom: isMobile ? 10 : 14,
     },
+
     input: {
       width: "100%",
       padding: isMobile ? 10 : 13,
@@ -673,6 +681,7 @@ function getStyles(isMobile) {
       fontSize: isMobile ? 14 : 16,
       boxSizing: "border-box",
     },
+
     button: {
       width: "100%",
       padding: isMobile ? 12 : 14,
@@ -683,6 +692,7 @@ function getStyles(isMobile) {
       fontSize: isMobile ? 15 : 16,
       marginTop: 4,
     },
+
     redButton: {
       width: "100%",
       padding: 10,
@@ -693,6 +703,7 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       marginBottom: 8,
     },
+
     grayButton: {
       width: "100%",
       padding: 10,
@@ -703,6 +714,7 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       marginBottom: 8,
     },
+
     menuButton: {
       background: "#00ff99",
       color: "#000",
@@ -712,6 +724,7 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       fontSize: 18,
     },
+
     logoutSmall: {
       background: "#ff4444",
       color: "#fff",
@@ -721,22 +734,33 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       fontSize: isMobile ? 13 : 15,
     },
-    menuItem: {
-      width: "100%",
-      background: "#050505",
+
+    quickMenu: {
+      display: "flex",
+      gap: 8,
+      overflowX: "auto",
+      marginBottom: 12,
+      paddingBottom: 6,
+      WebkitOverflowScrolling: "touch",
+    },
+
+    quickMenuItem: {
+      whiteSpace: "nowrap",
+      background: "#111",
       color: "#fff",
       border: "1px solid #333",
       borderRadius: 10,
-      padding: 10,
-      marginBottom: 8,
-      textAlign: "left",
+      padding: isMobile ? "8px 10px" : "10px 14px",
       fontWeight: "bold",
+      fontSize: isMobile ? 12 : 14,
     },
+
     calendar: {
       display: "grid",
       gridTemplateColumns: "repeat(7, 1fr)",
       gap: isMobile ? 5 : 7,
     },
+
     day: {
       padding: isMobile ? 7 : 10,
       borderRadius: 8,
@@ -744,31 +768,37 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       fontSize: isMobile ? 12 : 14,
     },
+
     grid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: isMobile ? 6 : 10,
     },
+
     checkRow: {
       display: "flex",
       gap: 8,
       alignItems: "center",
       marginBottom: 10,
     },
+
     tableWrap: {
       overflowX: "auto",
       WebkitOverflowScrolling: "touch",
     },
+
     table: {
       width: "100%",
       borderCollapse: "collapse",
       minWidth: isMobile ? 1250 : 1450,
       fontSize: isMobile ? 12 : 14,
     },
+
     dailyBox: {
       borderBottom: "1px solid #333",
       padding: "10px 0",
     },
+
     smallGreen: {
       background: "#00ff99",
       color: "#000",
@@ -779,6 +809,7 @@ function getStyles(isMobile) {
       marginRight: 5,
       fontSize: isMobile ? 12 : 13,
     },
+
     smallRed: {
       background: "#ff4444",
       color: "#fff",
@@ -788,6 +819,7 @@ function getStyles(isMobile) {
       fontWeight: "bold",
       fontSize: isMobile ? 12 : 13,
     },
+
     gray: {
       color: "#aaa",
     },
