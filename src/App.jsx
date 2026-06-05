@@ -471,21 +471,64 @@ export default function App() {
         {activeView === "daily" && (
           <div style={layout.card}>
             <h2>Tổng theo từng ngày</h2>
+
             {dailySummaries.map((d) => {
               const sum = makeSummary(d.items);
+
               return (
-                <div key={d.date} style={layout.dailyBox}>
-                  <h3>{d.date}</h3>
+                <details key={d.date} style={layout.dailyBox}>
+                  <summary style={layout.dailySummary}>
+                    <b>{d.date}</b>
+                    <span style={{ color: sum.profit >= 0 ? "#00ff99" : "#ff4444" }}>
+                      Lãi/Lỗ: {yen(sum.profit)}
+                    </span>
+                  </summary>
+
                   <p>Mua: {yen(sum.buy)}</p>
                   <p>Bán: {yen(sum.sell)}</p>
                   <p>Phí: {yen(sum.fee)}</p>
                   <p>Ship: {yen(sum.ship)}</p>
-                  <h3 style={{ color: sum.profit >= 0 ? "#00ff99" : "#ff4444" }}>
-                    Lãi/Lỗ: {yen(sum.profit)}
-                  </h3>
-                </div>
+
+                  <div style={layout.tableWrap}>
+                    <table style={layout.dailyTable}>
+                      <thead>
+                        <tr>
+                          <th>Tên</th>
+                          <th>SL</th>
+                          <th>Mua</th>
+                          <th>Bán</th>
+                          <th>Kênh</th>
+                          <th>Sold</th>
+                          <th>Lãi</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {d.items.map((x) => {
+                          const profit = calcProfit(x);
+
+                          return (
+                            <tr key={x.id}>
+                              <td>{x.name}</td>
+                              <td>{x.qty}</td>
+                              <td>{yen(x.buyPrice)}</td>
+                              <td>{yen(x.sellPrice)}</td>
+                              <td>{x.place}</td>
+                              <td>{x.sold ? "✅" : "⬜"}</td>
+                              <td style={{ color: profit >= 0 ? "#00ff99" : "#ff4444" }}>
+                                {yen(profit)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
               );
             })}
+
+            {dailySummaries.length === 0 && <p style={layout.gray}>Chưa có dữ liệu</p>}
           </div>
         )}
       </main>
@@ -834,9 +877,24 @@ function getStyles(isMobile) {
       fontSize: isMobile ? 12 : 14,
     },
 
+    dailyTable: {
+      width: "100%",
+      borderCollapse: "collapse",
+      minWidth: isMobile ? 650 : 850,
+      fontSize: isMobile ? 12 : 14,
+    },
+
     dailyBox: {
       borderBottom: "1px solid #333",
       padding: "10px 0",
+    },
+
+    dailySummary: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: 10,
+      cursor: "pointer",
+      color: "#fff",
     },
 
     smallGreen: {
