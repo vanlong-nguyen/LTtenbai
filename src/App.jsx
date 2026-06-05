@@ -187,6 +187,15 @@ export default function App() {
 
   const layout = getStyles(isMobile);
 
+  const viewTitle = {
+    dashboard: "Nhập sản phẩm",
+    sold: "Hàng đã bán",
+    unsold: "Hàng chưa bán",
+    online: "Hàng mua online",
+    preorder: "Hàng 予約",
+    daily: "Tổng theo từng ngày",
+  };
+
   if (!loggedIn) {
     return (
       <div style={layout.loginPage}>
@@ -220,17 +229,6 @@ export default function App() {
     if (isMobile) setMenuOpen(false);
   };
 
-  const quickMenu = (
-    <div style={layout.quickMenu}>
-      <button style={layout.quickMenuItem} onClick={() => openView("dashboard")}>Nhập</button>
-      <button style={layout.quickMenuItem} onClick={() => openView("sold")}>Hàng đã bán</button>
-      <button style={layout.quickMenuItem} onClick={() => openView("unsold")}>Hàng chưa bán</button>
-      <button style={layout.quickMenuItem} onClick={() => openView("online")}>Hàng mua online</button>
-      <button style={layout.quickMenuItem} onClick={() => openView("preorder")}>Hàng 予約</button>
-      <button style={layout.quickMenuItem} onClick={() => openView("daily")}>Tổng theo từng ngày</button>
-    </div>
-  );
-
   const sidebar = (
     <div>
       <h2 style={{ color: "#00ff99", marginTop: 0 }}>Menu</h2>
@@ -240,6 +238,32 @@ export default function App() {
           Đóng
         </button>
       )}
+
+      <div style={layout.cardMini}>
+        <button style={activeView === "dashboard" ? layout.menuItemActive : layout.menuItem} onClick={() => openView("dashboard")}>
+          Nhập sản phẩm
+        </button>
+
+        <button style={activeView === "sold" ? layout.menuItemActive : layout.menuItem} onClick={() => openView("sold")}>
+          Hàng đã bán
+        </button>
+
+        <button style={activeView === "unsold" ? layout.menuItemActive : layout.menuItem} onClick={() => openView("unsold")}>
+          Hàng chưa bán
+        </button>
+
+        <button style={activeView === "online" ? layout.menuItemActive : layout.menuItem} onClick={() => openView("online")}>
+          Hàng mua online
+        </button>
+
+        <button style={activeView === "preorder" ? layout.menuItemActive : layout.menuItem} onClick={() => openView("preorder")}>
+          Hàng 予約
+        </button>
+
+        <button style={activeView === "daily" ? layout.menuItemActive : layout.menuItem} onClick={() => openView("daily")}>
+          Tổng theo từng ngày
+        </button>
+      </div>
 
       <div style={layout.cardMini}>
         <h3>Chọn ngày</h3>
@@ -317,8 +341,9 @@ export default function App() {
           </button>
         </div>
 
-        {isMobile && quickMenu}
-        {!isMobile && quickMenu}
+        <div style={layout.activeTitle}>
+          Đang mở: {viewTitle[activeView]}
+        </div>
 
         {activeView === "dashboard" && (
           <>
@@ -625,6 +650,17 @@ function getStyles(isMobile) {
       margin: 0,
     },
 
+    activeTitle: {
+      background: "#111",
+      border: "1px solid #333",
+      borderRadius: 12,
+      padding: isMobile ? 10 : 14,
+      marginBottom: isMobile ? 10 : 16,
+      color: "#00ff99",
+      fontWeight: "bold",
+      fontSize: isMobile ? 14 : 18,
+    },
+
     desktopSideMenu: {
       background: "#080808",
       minHeight: "100vh",
@@ -735,24 +771,28 @@ function getStyles(isMobile) {
       fontSize: isMobile ? 13 : 15,
     },
 
-    quickMenu: {
-      display: "flex",
-      gap: 8,
-      overflowX: "auto",
-      marginBottom: 12,
-      paddingBottom: 6,
-      WebkitOverflowScrolling: "touch",
-    },
-
-    quickMenuItem: {
-      whiteSpace: "nowrap",
-      background: "#111",
+    menuItem: {
+      width: "100%",
+      background: "#050505",
       color: "#fff",
       border: "1px solid #333",
       borderRadius: 10,
-      padding: isMobile ? "8px 10px" : "10px 14px",
+      padding: 10,
+      marginBottom: 8,
+      textAlign: "left",
       fontWeight: "bold",
-      fontSize: isMobile ? 12 : 14,
+    },
+
+    menuItemActive: {
+      width: "100%",
+      background: "#00ff99",
+      color: "#000",
+      border: "1px solid #00ff99",
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 8,
+      textAlign: "left",
+      fontWeight: "bold",
     },
 
     calendar: {
